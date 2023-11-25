@@ -1,31 +1,35 @@
 package com.example.demo.api.web;
 
 import com.amazonaws.services.s3.model.S3Object;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.demo.Entity.CourseEntity;
-import com.example.demo.Entity.TestCourse;
+import com.example.demo.Entity.LectureEntity;
+import com.example.demo.Entity.ProcessPointEntity;
 import com.example.demo.Entity.UserEntity;
-import com.example.demo.SlopeOne.Item;
 import com.example.demo.SlopeOne.SlopeOne;
 import com.example.demo.dto.*;
+import com.example.demo.repo.LectureRepo;
 import com.example.demo.s3.FileStore;
-import com.example.demo.service.CourseService;
-import com.example.demo.service.UserService;
+import com.example.demo.service.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.HttpHeaders;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.*;
+
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @RestController
 @RequestMapping(path = "api")
@@ -35,8 +39,10 @@ public class CourseApi {
     private final CourseService courseService;
     private final SlopeOne slopeOne;
     private final UserService userService;
-    private  final TestCourse testCourse;
     private final FileStore fileStore;
+    private final ProcessPointService processPointService;
+    private final RegistrationCourseService registrationCourseService;
+    private final LectureService lectureService;
     @GetMapping("/course")
     public ResponseEntity<CourseEntity> GetCourse(@RequestParam Long id) throws IllegalAccessException {
         return  ResponseEntity.ok().body(courseService.findCourseById(id));
@@ -80,8 +86,8 @@ public class CourseApi {
     @PostMapping(value = "/course/save",
                     consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
                     produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<CourseEntity> SaveCourse(
+   // @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<CourseEntity> SaveCourse( 
             @ModelAttribute CourseSaveRequest course,
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime dateStart) throws IllegalAccessException {
@@ -133,5 +139,30 @@ public class CourseApi {
     @GetMapping(value = "/course/video/{id}/download/url")
     public String  getVideoUrl (@PathVariable("id") Long id){
         return courseService.getVideoUrl(id);
+    }
+
+    @GetMapping(value = "/course/enrolled/{id}")
+    public ResponseEntity<ProcessPointEntity> getProcess(@PathVariable("id") Long id,@RequestHeader(AUTHORIZATION) String authorizationHeader){
+        String token = authorizationHeader.substring("Bearer ".length());
+        Algorithm algorithm= Algorithm.HMAC256("secrect".getBytes());
+        JWTVerifier verifier= JWT.require(algorithm).build();
+        DecodedJWT decodedJWT= verifier.verify(token);
+        String username=decodedJWT.getSubject();
+        return ResponseEntity.ok().body(processPointService.getProcessPointByCourseAndUser(id,userService.getUser(username).getId()));
+    }
+
+    @GetMapping(value = "/course/enrolled/check/{id}")
+    public ResponseEntity<Boolean> checkEnrolled(@PathVariable("id") Long id,@RequestHeader(AUTHORIZATION) String authorizationHeader){
+        String token = authorizationHeader.substring("Bearer ".length());
+        Algorithm algorithm= Algorithm.HMAC256("secrect".getBytes());
+        JWTVerifier verifier= JWT.require(algorithm).build();
+        DecodedJWT decodedJWT= verifier.verify(token);
+        String username=decodedJWT.getSubject();
+        return ResponseEntity.ok().body(registrationCourseService.checkIsStudent(username,id));
+    }
+
+    @GetMapping(value = "/course/lecture/get/{id}")
+    public ResponseEntity<LectureEntity> getProcess(@PathVariable("id") Long id){
+        return ResponseEntity.ok().body(lectureService.getLecture(id));
     }
 }

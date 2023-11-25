@@ -17,6 +17,9 @@ public class AnswerEntity {
     private Long id;
     private String answer;
 
+    @OneToOne
+    @JoinColumn(name = "choice_id")
+    private ChoiceEntity choice;
 }
 
 

@@ -33,14 +33,14 @@ public class RegistrationServiceImpl implements RegistrationService{
                 registrationRequest.getFullName()
         )) ;
 
-        String link="http://localhost:8080/api/registration/confirm?token="+token;
-            emailSenderService.send(registrationRequest.getEmail(),buildEmail(registrationRequest.getFullName(),link));
+            //String link="http://localhost:8080/api/registration/confirm?token="+token+"&userName="+registrationRequest.getEmail();
+           // emailSenderService.send(registrationRequest.getEmail(),buildEmail(registrationRequest.getFullName(),link));
         return token;
     }
 
     @Override
     @Transactional
-    public String confirmToken(String token) {
+    public void confirmToken(String token) {
         ConfirmationToken confirmationToken= confirmationTokenService
                 .getToken(token)
                 .orElseThrow(()->new IllegalStateException("token not found"));
@@ -53,8 +53,6 @@ public class RegistrationServiceImpl implements RegistrationService{
             throw new IllegalStateException("token expired");
         }
         confirmationTokenService.setConfirmedAt(token);
-
-        return "confirmed";
     }
 
     private String buildEmail(String name, String link) {

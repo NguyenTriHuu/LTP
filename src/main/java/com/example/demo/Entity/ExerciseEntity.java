@@ -21,10 +21,13 @@ public class ExerciseEntity extends BaseEntity{
     private String solution;
     private Boolean locked;
 
-
     @OneToMany
     @JoinColumn(name = "exercise_id")
     private Collection<AnswerEntity> answers =new ArrayList<>();
+
+    @OneToMany
+    @JoinColumn(name = "exercise_id")
+    private Collection<ChoiceEntity> choices =new ArrayList<>();
 
     @OneToMany
     @JoinColumn(name = "exercise_id")

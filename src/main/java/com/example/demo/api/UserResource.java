@@ -45,21 +45,21 @@ public class UserResource {
     }
 
     @PostMapping ("/user/save")
-    @PreAuthorize("hasAuthority('student:write')")
+    //@PreAuthorize("hasAuthority('student:write')")
     public ResponseEntity<UserEntity> saveUser(@RequestBody UserEntity user){
         URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/user/save").toUriString());
         return ResponseEntity.created(uri).body(userService.saveUser(user));
     }
 
     @PostMapping ("/role/save")
-    @PreAuthorize("hasAuthority('student:write')")
+    //@PreAuthorize("hasAuthority('student:write')")
     public ResponseEntity<RoleEntity> saveRole(@RequestBody RoleEntity role){
         URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/role/save").toUriString());
         return ResponseEntity.created(uri).body(userService.saveRole(role));
     }
 
     @PostMapping ("/role/addtouser")
-    @PreAuthorize("hasAuthority('student:write')")
+    //@PreAuthorize("hasAuthority('student:write')")
     public ResponseEntity<?> addRoleToUser(@RequestBody AddRoleToUserForm form){
         userService.addRoleToUser(form.getUsername(),form.getRole());
         return ResponseEntity.ok().build();
@@ -79,10 +79,10 @@ public class UserResource {
                 Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
                 user.getRoles().forEach(role -> {
                     authorities.add(new SimpleGrantedAuthority(role.getName()));
-                    RoleEntity roleEntity =roleRepo.findByName(role.getName());
-                    roleEntity.getPermission().forEach(permission ->{
-                        authorities.add(new SimpleGrantedAuthority(permission.getName()));
-                    });
+                   // RoleEntity roleEntity =roleRepo.findByName(role.getName());
+                   // roleEntity.getPermission().forEach(permission ->{
+                     //   authorities.add(new SimpleGrantedAuthority(permission.getName()));
+                   // });
                 });
                 String access_token= JWT.create()
                         .withSubject(user.getUsername())

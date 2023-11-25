@@ -36,9 +36,4 @@ public class CourseEntity extends BaseEntity {
     @JoinColumn(name = "course_id")
     private Collection<ThematicEntity> thematics =new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "teacher_id")
-    private UserEntity teacher;
-
-
 }

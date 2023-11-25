@@ -25,8 +25,11 @@ public interface UserService {
     List<UserEntity> findAllTeacher();
 
     byte[] downLoadImg(Long id);
+    byte[] downLoadAvatar(Long id);
 
     UserEntity updateProfileTeacher(Long id, ProfileTeacherUpdateRequest request);
 
+    UserEntity getTeacherByCourse(Long idCourse);
 
+    void setVerifiUser(String userName);
 }

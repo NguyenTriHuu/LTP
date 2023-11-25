@@ -6,20 +6,15 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
-
 @Entity
-@Table(name ="image")
+@Table(name ="profile_student")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ImageEntity {
+public class ProfileStudentEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Lob
-    @Column(name = "image", columnDefinition="BLOB")
-    private byte[] image;
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private UserEntity userEntity;
+
+
 }

@@ -3,10 +3,7 @@ package com.example.demo.service;
 import com.example.demo.Entity.CategoryEntity;
 import com.example.demo.Entity.EducationProgramEntity;
 import com.example.demo.Entity.SubjectEntity;
-import com.example.demo.dto.CategoryResponse;
-import com.example.demo.dto.CategoryforSubjectRes;
-import com.example.demo.dto.ProgramEducationResponse;
-import com.example.demo.dto.SubjectReponse;
+import com.example.demo.dto.*;
 import com.example.demo.repo.CategoryRepo;
 import com.example.demo.repo.ProgramEducationRepo;
 import lombok.RequiredArgsConstructor;
@@ -53,8 +50,19 @@ public class CategoryServiceImpl implements CategoryService{
     }
 
     @Override
-    public void save(CategoryEntity categoryEntity) {
-        categoryRepo.save(categoryEntity);
+    public CategoryEntity save(String name, String code) {
+        CategoryEntity category = new CategoryEntity();
+        category.setCode(code);
+        category.setName(name);
+       return categoryRepo.save(category);
+    }
+
+    @Override
+    public CategoryEntity update(CategoryRequest categoryRequest) {
+        CategoryEntity categoryEntity = categoryRepo.findById(categoryRequest.getId()).orElseThrow();
+        categoryEntity.setName(categoryRequest.getName());
+        categoryEntity.setCode(categoryRequest.getCode());
+       return categoryRepo.save(categoryEntity);
     }
 
     @Override
@@ -67,5 +75,33 @@ public class CategoryServiceImpl implements CategoryService{
     @Override
     public CategoryforSubjectRes findCategoryBySubject(Long idSub) {
         return categoryRepo.findCategoryBySubject(idSub);
+    }
+
+    @Override
+    public List<CategoryEntity> getAll() {
+        return categoryRepo.findAll();
+    }
+
+    @Override
+    public String checkCategory(Long[] ids) {
+        String message="Category Id[";
+        for(int i=0;i<ids.length;i++){
+            if(categoryRepo.countCourseByCategory(ids[i])>0){
+                if(i==0){
+                    message+=""+ids[i]+"";
+                    continue;
+                }
+                message+=","+ ids[i]+"";
+            }
+        }
+        if(message.equals("Category Id[")) message="ok";
+        else {
+            message+="]"+"already has a course.";
+        }
+        return message;
+    }
+
+    @Override
+    public void delete(Long[] ids) {
     }
 }

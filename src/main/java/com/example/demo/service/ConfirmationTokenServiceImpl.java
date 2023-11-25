@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.Entity.ConfirmationToken;
 import com.example.demo.repo.ConfirmationTokenRepo;
+import com.example.demo.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import java.util.Optional;
 public class ConfirmationTokenServiceImpl  implements ConfirmationTokenService{
 
     private final ConfirmationTokenRepo confirmationTokenRepo;
+    private final UserRepo userRepo;
     @Override
     public void saveConfirmationToken(ConfirmationToken confirmationToken) {
             confirmationTokenRepo.save(confirmationToken);
@@ -28,6 +30,7 @@ public class ConfirmationTokenServiceImpl  implements ConfirmationTokenService{
         ConfirmationToken confirmationToken= confirmationTokenRepo.findByToken(token).get();
         confirmationToken.setConfirmedAt(LocalDateTime.now());
         confirmationTokenRepo.save(confirmationToken);
+
     }
 
 }

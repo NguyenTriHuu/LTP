@@ -28,16 +28,6 @@ public class UserEntity extends BaseEntity {
     @ManyToMany(fetch = FetchType.EAGER)
     private Collection<RoleEntity> roles= new ArrayList<>();
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    @PrimaryKeyJoinColumn
-    private ProfileTeacher profileTeacher;
-
-    @OneToMany(mappedBy = "userEntity", cascade = CascadeType.ALL)
-    private Collection<ImageEntity> images= new ArrayList<>();
-
-    @OneToMany(mappedBy = "user")
-    private Collection<StudyEntity> study= new ArrayList<>();
-
     @OneToMany
     @JoinColumn(name = "user_id")
     private Collection<UserClicksOnCourseEntity> numOfClick= new ArrayList<>();
@@ -46,11 +36,19 @@ public class UserEntity extends BaseEntity {
     @JoinColumn(name = "user_id")
     private Collection<AddressEntity> address = new ArrayList<>();
 
+    @OneToMany
+    @JoinColumn(name = "user_id")
+    private Collection<ProfileStudentEntity> profileStudent = new ArrayList<>();
+
+    @OneToMany
+    @JoinColumn(name = "user_id")
+    private Collection<ProfileTeacher> profileTeacher = new ArrayList<>();
 
     public UserEntity(String username, String password, String fullname) {
         this.username = username;
         this.password = password;
         this.fullname = fullname;
+
     }
 
     public UserEntity( String username, String password, String fullname, Boolean locked, Boolean isTeacher, Boolean isManager, Boolean isAdmin) {

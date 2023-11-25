@@ -8,10 +8,10 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
-@Table(name ="permission")
+@Table(name ="choice")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PermissionEntity extends BaseEntity{
-    private String name;
+public class ChoiceEntity extends BaseEntity{
+    private String content;
 }

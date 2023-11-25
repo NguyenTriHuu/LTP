@@ -17,6 +17,7 @@ public class ProfileTeacherUpdateRequest {
     private String imageBg;
     private String email;
     private String contact;
+    private String aboutMe;
     @JsonIgnore
     private MultipartFile imgBgFile;
     @JsonIgnore
@@ -25,4 +26,5 @@ public class ProfileTeacherUpdateRequest {
     private String fullName;
     @JsonIgnore
     private String passWord;
+
 }

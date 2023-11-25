@@ -17,4 +17,5 @@ public class FileEntity {
     private Long id;
     private String fileName;
     private String fileLink;
+    private Boolean status;
 }

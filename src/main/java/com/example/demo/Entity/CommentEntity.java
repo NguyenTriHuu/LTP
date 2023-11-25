@@ -12,7 +12,7 @@ import java.util.Collection;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommentEntity extends BaseEntity {
+public class  CommentEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
@@ -24,9 +24,11 @@ public class CommentEntity extends BaseEntity {
     @JoinColumn(name = "blog_id")
     private BlogEntity blog;
 
-    @ManyToOne(fetch=FetchType.LAZY, cascade={CascadeType.PERSIST, CascadeType.MERGE})
-    private CommentEntity commentParent;
+    @ManyToOne
+    @JoinColumn(name = "lecture_id")
+    private LectureEntity lecture;
 
-    @OneToMany(mappedBy="commentParent")
-    private Collection<CommentEntity> commentChilds;
+    @ManyToOne
+    @JoinColumn(name = "configcomment_id")
+    private ConfigCommentEntity configComment;
 }

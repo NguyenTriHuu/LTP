@@ -1,9 +1,7 @@
 package com.example.demo;
 
-import com.example.demo.Entity.CategoryEntity;
-import com.example.demo.Entity.RoleEntity;
-import com.example.demo.Entity.EducationProgramEntity;
-import com.example.demo.Entity.UserEntity;
+import com.example.demo.Entity.*;
+import com.example.demo.dto.ProfileTeacherUpdateRequest;
 import com.example.demo.service.CategoryService;
 import com.example.demo.service.ProgramEducationService;
 import com.example.demo.service.SubjectService;
@@ -26,17 +24,17 @@ public class DemoApplication {
 	/*@Bean
 	CommandLineRunner run(UserService userService){
 		return args -> {
-			userService.saveUser(new UserEntity("user@gmail.com","123","join",false,22));
-			userService.saveUser(new UserEntity("admin@gmail.com","123","join1",false,22));
-			userService.saveUser(new UserEntity("manager@gmail.com","123","join2",false,22));
-			userService.saveUser(new UserEntity("teacher@gmail.com","123","join3",false,22));
-			userService.saveUser(new UserEntity("user2@gmail.com","123","join5",false,22));
-			userService.saveUser(new UserEntity("user3@gmail.com","123","join6",false,22));
-			userService.saveUser(new UserEntity("user4@gmail.com","123","join7",false,22));
-			userService.saveRole(new RoleEntity("ADMIN",new ArrayList<>()));
-			userService.saveRole(new RoleEntity("STUDENT",new ArrayList<>()));
-			userService.saveRole(new RoleEntity("TEACHER",new ArrayList<>()));
-			userService.saveRole(new RoleEntity("MANAGER",new ArrayList<>()));
+			userService.saveUser(new UserEntity("user@gmail.com","123","join"));
+			userService.saveUser(new UserEntity("admin@gmail.com","123","join1"));
+			userService.saveUser(new UserEntity("manager@gmail.com","123","join2"));
+			userService.saveUser(new UserEntity("teacher@gmail.com","123","join3"));
+			userService.saveUser(new UserEntity("user2@gmail.com","123","join5"));
+			userService.saveUser(new UserEntity("user3@gmail.com","123","join6"));
+			userService.saveUser(new UserEntity("user4@gmail.com","123","join7"));
+			userService.saveRole(new RoleEntity("ADMIN"));
+			userService.saveRole(new RoleEntity("STUDENT"));
+			userService.saveRole(new RoleEntity("TEACHER"));
+			userService.saveRole(new RoleEntity("MANAGER"));
 
 			userService.addRoleToUser("user2@gmail.com","STUDENT");
 			userService.addRoleToUser("user3@gmail.com","STUDENT");
@@ -51,6 +49,8 @@ public class DemoApplication {
 			userService.addRoleToUser("teacher2@gmail.com","TEACHER");
 		};
 	}*/
+
+
 
 	/*@Bean
 	CommandLineRunner run(ProgramEducationService programEducationService){
@@ -121,8 +121,6 @@ public class DemoApplication {
 			programEducationService.addSubjectToProgram("Lớp 6","Ngữ văn");
 			programEducationService.addSubjectToProgram("Lớp 6","Toán");
 			programEducationService.addSubjectToProgram("Lớp 6","Tiếng Anh");
-
-
 			programEducationService.addSubjectToProgram("Luyện đề","Ngữ văn");
 			programEducationService.addSubjectToProgram("Luyện đề","Toán");
 			programEducationService.addSubjectToProgram("Luyện đề","Tiếng Anh");

@@ -1,8 +1,9 @@
 package com.example.demo.service;
+import com.amazonaws.util.IOUtils;
 import com.example.demo.Entity.*;
 import com.example.demo.dto.ProfileTeacherUpdateRequest;
-import com.example.demo.repo.PermissionRepo;
 import com.example.demo.repo.ProfileTeacherRepo;
+import com.example.demo.repo.RegistrationRepo;
 import com.example.demo.repo.RoleRepo;
 import com.example.demo.repo.UserRepo;
 import com.example.demo.s3.BucketName;
@@ -19,7 +20,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -35,11 +35,11 @@ import static com.example.demo.security.ApplicationUserRole.ADMIN;
 public class UserServiceImpl implements UserService, UserDetailsService {
     private final UserRepo userRepo;
     private final RoleRepo roleRepo;
-    private final PermissionRepo permissionRepo;
     private final PasswordEncoder passwordEncoder;
     private  final ConfirmationTokenService confirmationTokenService;
     private final FileStore fileStore;
     private final ProfileTeacherRepo profileTeacherRepo;
+    private final RegistrationRepo registrationRepo;
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity user = userRepo.findByUsername(username).get();
@@ -53,10 +53,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
         user.getRoles().forEach(role -> {
             authorities.add(new SimpleGrantedAuthority(role.getName()));
-            RoleEntity roleEntity =roleRepo.findByName(role.getName());
-            roleEntity.getPermission().forEach(permission ->{
-                authorities.add(new SimpleGrantedAuthority(permission.getName()));
-            });
         });
 
         return new org.springframework.security.core.userdetails.User(user.getUsername(),user.getPassword(),authorities);
@@ -97,10 +93,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public void addPermissionToRole(String roleName, String permissonName) {
-        log.info("Fetching all user ");
+       /* log.info("Fetching all user ");
         PermissionEntity permissionEntity=permissionRepo.findByName(permissonName);
         RoleEntity roleEntity=roleRepo.findByName(roleName);
-        roleEntity.getPermission().add(permissionEntity);
+        roleEntity.getPermission().add(permissionEntity);*/
     }
 
     @Override
@@ -115,7 +111,29 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public byte[] downLoadImg(Long id) {
-        return new byte[0];
+        UserEntity user = userRepo.findById(id).get();
+        String path = String.format("%s/%s", BucketName.COURSE_IMAGE.getBucketName(), user.getUsername());
+        String key = user.getProfileTeacher().iterator().next().getImageBg();
+        try {
+            return  IOUtils.toByteArray(fileStore.getObject(path,key).getObjectContent());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public byte[] downLoadAvatar(Long id) {
+        UserEntity user = userRepo.findById(id).get();
+        String path = String.format("%s/%s", BucketName.COURSE_IMAGE.getBucketName(), user.getUsername());
+        String key =user.getAvatar();
+        if(key==null){
+            return null;
+        }
+        try {
+            return  IOUtils.toByteArray(fileStore.getObject(path,key).getObjectContent());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -123,10 +141,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         UserEntity oldUser = userRepo.findById(id).get();
         UserEntity newUser = new UserEntity();
         ObjectMapper objectMapper = new ObjectMapper();
-        ProfileTeacher profile =oldUser.getProfileTeacher();
-        if(profile==null){
-            profile = new ProfileTeacher();
-        }
+        ProfileTeacher profile = new ProfileTeacher();
         try{
             String json = objectMapper.writeValueAsString(oldUser);
             newUser =objectMapper.readValue(json, UserEntity.class);
@@ -141,7 +156,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             nameAvatar =String.format("%s-%s",request.getAvatarFile().getName()+"avatar",newUser.getUsername());
             newUser.setAvatar(nameAvatar);
             try{
-                if(!oldUser.getAvatar().isEmpty())
+                if(oldUser.getAvatar()!=null)
                 fileStore.deleteFile( BucketName.COURSE_IMAGE.getBucketName(),oldUser.getAvatar());
                 fileStore.save(pathAvatar,nameAvatar,Optional.of(metadata),request.getAvatarFile().getInputStream());
             }catch (IOException e) {
@@ -156,9 +171,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             nameImageBg =String.format("%s-%s",request.getImgBgFile().getName(),newUser.getUsername());
             request.setImageBg(nameImageBg);
             try{
-                if(profile.getImageBg()!=null)
-                    fileStore.deleteFile( BucketName.COURSE_IMAGE.getBucketName(),profile.getImageBg());
+                if(oldUser.getProfileTeacher().size()==0){
                     fileStore.save(pathImageBg,nameImageBg,Optional.of(metadata),request.getImgBgFile().getInputStream());
+                }else{
+                    if(profile.getImageBg()!=null)
+                        fileStore.deleteFile( BucketName.COURSE_IMAGE.getBucketName(),profile.getImageBg());
+                        fileStore.save(pathImageBg,nameImageBg,Optional.of(metadata),request.getImgBgFile().getInputStream());
+                }
+
             }catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -169,19 +189,51 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         if(request.getPassWord()!=null){
             newUser.setPassword(passwordEncoder.encode(request.getPassWord()));
         }
+        if(request.getFullName()!=null){
+            newUser.setFullname(request.getFullName());
+        }
         try{
             String json = objectMapper.writeValueAsString(request);
             profile =objectMapper.readValue(json, ProfileTeacher.class);
-            profile.setUser(newUser);
-            profileTeacherRepo.save(profile);
         } catch (JsonMappingException e) {
             throw new RuntimeException(e);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
+        if(oldUser.getProfileTeacher().size()==0){
+            //Add profile
+            ProfileTeacher newProfile =profileTeacherRepo.save(profile);
+            UserEntity user =userRepo.save(newUser);
+            user.getProfileTeacher().add(newProfile);
+        }else{
+            //Update profile
+            ProfileTeacher oldProfile = userRepo.save(newUser).getProfileTeacher().iterator().next();
+            try{
+                String json = objectMapper.writeValueAsString(oldProfile);
+                profile =objectMapper.readValue(json, ProfileTeacher.class);
+                profileTeacherRepo.save(profile);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
 
-        return userRepo.save(newUser);
+        }
+
+        return newUser;
+    }
+
+    @Override
+    public UserEntity getTeacherByCourse(Long idCourse) {
+        Long roleId = roleRepo.findByName("TEACHER").getId();
+        RegistrationsEntity registrationsEntity = registrationRepo.findByCourseAndRole(idCourse,roleId).get();
+        return registrationsEntity.getUser();
+    }
+
+    @Override
+    public void setVerifiUser(String userName) {
+        UserEntity user =userRepo.findByUsername(userName).get();
+        user.setLocked(false);
+        userRepo.save(user);
     }
 
 
@@ -192,6 +244,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             throw new IllegalAccessException("Email already taken");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setLocked(false);
+        List<RoleEntity> list = new ArrayList<>();
+        RoleEntity role = roleRepo.findByName("STUDENT");
+        list.add(role);
+        user.setRoles(list);
         userRepo.save(user);
         String token= UUID.randomUUID().toString();
         ConfirmationToken confirmationToken=new ConfirmationToken(
@@ -217,5 +274,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         metadata.put("Content-Length",String.valueOf(file.getSize()));
         return metadata;
     }
+
+
 
 }

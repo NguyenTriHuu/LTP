@@ -20,6 +20,11 @@ public class RegistrationsEntity {
     private LocalDateTime registrationDate;
     @ManyToOne
     private UserEntity user;
+
     @ManyToOne
     private CourseEntity course;
+
+    @ManyToOne
+    private RoleEntity role;
+
 }

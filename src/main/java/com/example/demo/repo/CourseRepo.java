@@ -12,7 +12,7 @@ public interface CourseRepo extends JpaRepository<CourseEntity,Long> {
         Optional<CourseEntity> findById(Long id);
         CourseEntity findByTitle(String name);
         @Query(value =
-                "select course.id, course.title, course.createdtime,course.date_start,course.description,course.image,course.modifiedtime,course.price,course.status,course.teacher_id,course.subject_id, course.duration , course.short_description ,course.link_video_intro " +
+                "select course.id, course.title, course.createdtime,course.date_start,course.description,course.image,course.modifiedtime,course.price,course.status,course.subject_id, course.duration , course.short_description ,course.link_video_intro " +
                 "from categoty join categoty_programs on categoty.id = categoty_programs.category_entity_id \n" +
                 "join program on  categoty_programs.programs_id =program.id \n" +
                 "join program_subjects on program.id =program_subjects.education_program_entity_id \n" +

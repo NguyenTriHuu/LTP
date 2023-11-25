@@ -29,13 +29,14 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 public class UserApi {
     private final UserService userService;
 
-    @GetMapping("user/allteacher")
+    @GetMapping("/user/allteacher")
     public ResponseEntity<List<UserEntity>> findAllTeacher(){
         return ResponseEntity.ok().body(userService.findAllTeacher());
     }
 
     @GetMapping("/user/image/{id}/download")
     public byte[]  downloadthumdnail (@PathVariable("id") Long id){
+
         return userService.downLoadImg(id);
     }
 
@@ -57,6 +58,17 @@ public class UserApi {
         DecodedJWT decodedJWT= verifier.verify(token);
         String username=decodedJWT.getSubject();
         return ResponseEntity.ok().body(userService.getUser(username));
+    }
+
+    @GetMapping(value = "/user/teacher/course/{id}")
+    public ResponseEntity<UserEntity> findTeacherByCourse(@PathVariable("id") Long id){
+        return ResponseEntity.ok().body(userService.getTeacherByCourse(id));
+    }
+
+    @GetMapping(value = "/user/teacher/course/{id}/avatar")
+    public byte[] GetAvatarTeacherByCourse(@PathVariable("id") Long id){
+        //UserEntity user =userService.getTeacherByCourse(id);
+        return userService.downLoadAvatar(id);
     }
 
 }

@@ -4,5 +4,5 @@ import com.example.demo.dto.RegistrationRequest;
 
 public interface RegistrationService {
     String register(RegistrationRequest registrationRequest) throws IllegalAccessException;
-    String confirmToken(String token);
+    void confirmToken(String token);
 }

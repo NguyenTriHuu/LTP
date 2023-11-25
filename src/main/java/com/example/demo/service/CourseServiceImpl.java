@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.util.IOUtils;
 import com.example.demo.Entity.CourseEntity;
 import com.example.demo.Entity.LectureEntity;
+import com.example.demo.Entity.RegistrationsEntity;
 import com.example.demo.Entity.ThematicEntity;
 import com.example.demo.dto.*;
 import com.example.demo.repo.*;
@@ -23,6 +24,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -35,6 +37,8 @@ public class CourseServiceImpl implements CourseService{
     private final SubjectRepo subjectRepo;
     private final ThematicRepo thematicRepo;
     private final LectureRepo lectureRepo;
+    private final RoleRepo roleRepo;
+    private final RegistrationRepo registrationRepo;
 
     @Override
     public CourseEntity findCourseById(Long id) {
@@ -60,9 +64,9 @@ public class CourseServiceImpl implements CourseService{
         courseEntity.setShortDescription(course.getShortDescription());
         courseEntity.setImage(thumdnailName);
         courseEntity.setPrice(course.getPrice());
-        courseEntity.setTeacher(userRepo.findById(course.getTeacherId()).get());
         courseEntity.setTitle(course.getTitle());
         courseEntity.setSubject(subjectRepo.findByCode(course.getSubject()).get());
+        courseEntity.setDuration(course.getDuration());
         courseEntity.setDescription(course.getDescription());
         courseEntity.setDateStart(course.getDateTime());
         courseEntity.setLinkVideoIntro(fileName);
@@ -73,8 +77,13 @@ public class CourseServiceImpl implements CourseService{
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-
-        return courseRepo.save(courseEntity);
+        RegistrationsEntity registrationsEntity = new RegistrationsEntity();
+        registrationsEntity.setCourse(courseRepo.save(courseEntity));
+        registrationsEntity.setUser(userRepo.findById(course.getTeacherId()).get());
+        registrationsEntity.setRegistrationDate(LocalDateTime.now());
+        registrationsEntity.setRole(roleRepo.findByName("TEACHER"));
+        registrationRepo.save(registrationsEntity);
+        return courseEntity;
     }
 
     private static Map<String, String> getStringStringMap(MultipartFile file) {
@@ -122,16 +131,6 @@ public class CourseServiceImpl implements CourseService{
         else objectFilter.setStatus(false);
         if(params.containsKey("stringQuery")) objectFilter.setStringQuery((String)params.get("stringQuery"));
         else objectFilter.setStringQuery("");
-        if(params.containsKey("page")){
-            if(params.containsKey("rowsPerPage"))
-                objectFilter.setRowsPerPage(Integer.parseInt((String)params.get("rowsPerPage")));
-            else
-                objectFilter.setRowsPerPage(10);
-            objectFilter.setOffSet((Integer.parseInt((String)params.get("page"))-1)*objectFilter.getRowsPerPage());
-        }else{
-            objectFilter.setOffSet(0);
-            objectFilter.setRowsPerPage(50);
-        }
         if(params.containsKey("sort")) objectFilter.setSort((String)params.get("sort"));
         else objectFilter.setSort("desc");
         if(params.containsKey("subject")) objectFilter.setSubject((String)params.get("subject"));
@@ -140,7 +139,6 @@ public class CourseServiceImpl implements CourseService{
         else objectFilter.setProgram("");
         if(params.containsKey("category")) objectFilter.setCategory((String)params.get("category"));
         else objectFilter.setCategory("");
-
         int totalItem =courseRepo.findAllByFilter("%"+
                         objectFilter.getCategory()+"%",
                 "%"+objectFilter.getProgram()+"%",
@@ -149,7 +147,21 @@ public class CourseServiceImpl implements CourseService{
                 objectFilter.getStatus(),
                 0,
                 100).size();
-
+        if(params.containsKey("page")){
+            if((Integer.parseInt((String)params.get("page")))*(Integer.parseInt((String)params.get("rowsPerPage")))<=totalItem)
+                listCourseResponse.setNextPage(Integer.parseInt((String)params.get("page"))+1);
+            listCourseResponse.setPreviousPage(Integer.parseInt((String)params.get("page")));
+            if(params.containsKey("rowsPerPage"))
+                objectFilter.setRowsPerPage(Integer.parseInt((String)params.get("rowsPerPage")));
+            else
+                objectFilter.setRowsPerPage(10);
+            objectFilter.setOffSet((Integer.parseInt((String)params.get("page"))-1)*objectFilter.getRowsPerPage());
+        }else{
+            listCourseResponse.setNextPage(2);
+            listCourseResponse.setPreviousPage(1);
+            objectFilter.setOffSet(0);
+            objectFilter.setRowsPerPage(50);
+        }
         listCourseResponse.setListCourse(courseRepo.findAllByFilter("%"+
                         objectFilter.getCategory()+"%",
                 "%"+objectFilter.getProgram()+"%",
@@ -159,9 +171,6 @@ public class CourseServiceImpl implements CourseService{
                 objectFilter.getOffSet(),
                 objectFilter.getRowsPerPage()
         ));
-        if((Integer.parseInt((String)params.get("page")))*objectFilter.getRowsPerPage()<=totalItem)
-        listCourseResponse.setNextPage(Integer.parseInt((String)params.get("page"))+1);
-        listCourseResponse.setPreviousPage(Integer.parseInt((String)params.get("page")));
         return listCourseResponse;
 
     }
@@ -197,10 +206,11 @@ public class CourseServiceImpl implements CourseService{
         String thumdnailName;
         if(courseUpdateRequest.getFile()!=null){
             Map<String, String> metadata= getStringStringMap(courseUpdateRequest.getFile());
-             pathFile = String.format("%s/%s", BucketName.COURSE_VIDEO.getBucketName(), courseUpdateRequest.getTitle());
-             fileName =String.format("%s-%s",courseUpdateRequest.getFile().getName(),courseUpdateRequest.getTitle());
-             newCourse.setImage(fileName);
+             pathFile = String.format("%s/%s", BucketName.COURSE_VIDEO.getBucketName(), newCourse.getTitle());
+             fileName =String.format("%s-%s",courseUpdateRequest.getFile().getName(),newCourse.getTitle());
+             newCourse.setLinkVideoIntro(fileName);
              try{
+                 if(oldCourse.getLinkVideoIntro()!= null)
                  fileStore.deleteFile( BucketName.COURSE_VIDEO.getBucketName(),oldCourse.getLinkVideoIntro());
                  fileStore.save(pathFile,fileName,Optional.of(metadata),courseUpdateRequest.getFile().getInputStream());
              }catch (IOException e) {
@@ -209,11 +219,12 @@ public class CourseServiceImpl implements CourseService{
         }
         if(courseUpdateRequest.getThumnail()!=null){
             Map<String, String> metadata= getStringStringMap(courseUpdateRequest.getThumnail());
-            pathThumdnail = String.format("%s/%s", BucketName.COURSE_IMAGE.getBucketName(), courseUpdateRequest.getTitle());
-            thumdnailName =String.format("%s-%s",courseUpdateRequest.getThumnail().getName(),courseUpdateRequest.getTitle());
+            pathThumdnail = String.format("%s/%s", BucketName.COURSE_IMAGE.getBucketName(), newCourse.getTitle());
+            thumdnailName =String.format("%s-%s",courseUpdateRequest.getThumnail().getName(),newCourse.getTitle());
             newCourse.setImage(thumdnailName);
             try{
-                fileStore.deleteFile( BucketName.COURSE_VIDEO.getBucketName(),oldCourse.getLinkVideoIntro());
+                if(oldCourse.getImage()!=null)
+                fileStore.deleteFile( BucketName.COURSE_IMAGE.getBucketName(),oldCourse.getImage());
                 fileStore.save(pathThumdnail,thumdnailName,Optional.of(metadata),courseUpdateRequest.getThumnail().getInputStream());
             }catch (IOException e) {
                 throw new RuntimeException(e);
@@ -221,7 +232,9 @@ public class CourseServiceImpl implements CourseService{
         }
 
         if(courseUpdateRequest.getTeacherId()!=null){
-            newCourse.setTeacher(userRepo.findById(courseUpdateRequest.getTeacherId()).get());
+            RegistrationsEntity registrationsEntity =registrationRepo.findByCourseAndRole(oldCourse.getId(),roleRepo.findByName("TEACHER").getId()).get();
+            registrationsEntity.setUser(userRepo.findById(courseUpdateRequest.getTeacherId()).get());
+            registrationRepo.save(registrationsEntity);
         }
         if(courseUpdateRequest.getSubject()!=null){
             newCourse.setSubject(subjectRepo.findByCode(courseUpdateRequest.getSubject()).get());
@@ -274,7 +287,7 @@ public class CourseServiceImpl implements CourseService{
 
     @Override
     public String getVideoUrl(Long id) {
-        CourseEntity course = courseRepo.findById(id).get();
+            CourseEntity course = courseRepo.findById(id).get();
         String path =String.format("%s/%s", BucketName.COURSE_VIDEO.getBucketName(), course.getTitle());
         String fileName =course.getLinkVideoIntro();
         return fileStore.getVideoUrl(fileName,path);
@@ -284,7 +297,6 @@ public class CourseServiceImpl implements CourseService{
         newCourse.setId(oldCourse.getId());
         newCourse.setImage(oldCourse.getImage());
         newCourse.setPrice(oldCourse.getPrice());
-        newCourse.setTeacher(oldCourse.getTeacher());
         newCourse.setTitle(oldCourse.getTitle());
         newCourse.setSubject(oldCourse.getSubject());
         newCourse.setDescription(oldCourse.getDescription());

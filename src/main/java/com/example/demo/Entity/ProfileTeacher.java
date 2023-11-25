@@ -23,9 +23,5 @@ public class ProfileTeacher {
     private String imageBg;
     private String email;
     private String contact;
-
-    @OneToOne
-    @MapsId
-    @JoinColumn(name = "user_id")
-    private UserEntity user;
+    private String aboutMe;
 }

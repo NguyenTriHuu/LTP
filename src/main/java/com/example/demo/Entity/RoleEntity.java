@@ -16,6 +16,4 @@ import java.util.Collection;
 @AllArgsConstructor
 public class RoleEntity extends BaseEntity {
     private String name;
-    @ManyToMany(fetch = FetchType.EAGER)
-    private Collection<PermissionEntity> permission= new ArrayList<>();
 }

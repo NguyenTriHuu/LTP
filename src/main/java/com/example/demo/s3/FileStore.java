@@ -1,25 +1,19 @@
 package com.example.demo.s3;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.DeleteObjectRequest;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.util.IOUtils;
-import com.sun.mail.iap.ResponseInputStream;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
-import java.io.IOException;
+
 import java.io.InputStream;
-import java.util.Map;
-import java.util.Optional;
 import java.net.URL;
 import java.util.Date;
+import java.util.Map;
+import java.util.Optional;
 
-import static com.amazonaws.HttpMethod.*;
+import static com.amazonaws.HttpMethod.GET;
 
 @Service
 public class FileStore {
@@ -71,6 +65,13 @@ public class FileStore {
                         .withExpiration(expiration);
         URL url = amazonS3Client.generatePresignedUrl(generatePresignedUrlRequest);
         return url.toString();
+    }
+
+    public void copyObject(String buckeName,String fromKey,String toKey,String folderName){
+        String oldFileKey = folderName + "/" + fromKey;
+        String newFileKey = folderName + "/" + toKey;
+        CopyObjectRequest copyObjRequest = new CopyObjectRequest(buckeName, oldFileKey, buckeName, newFileKey);
+        amazonS3Client.copyObject(copyObjRequest);
     }
 }
 
