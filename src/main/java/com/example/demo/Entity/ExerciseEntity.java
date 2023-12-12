@@ -29,9 +29,7 @@ public class ExerciseEntity extends BaseEntity{
     @JoinColumn(name = "exercise_id")
     private Collection<ChoiceEntity> choices =new ArrayList<>();
 
-    @OneToMany
-    @JoinColumn(name = "exercise_id")
-    private Collection<SubmitExerciseEntity> submitExercises =new ArrayList<>();
+
 
 
 }

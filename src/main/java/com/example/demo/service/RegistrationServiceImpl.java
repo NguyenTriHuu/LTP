@@ -27,11 +27,12 @@ public class RegistrationServiceImpl implements RegistrationService{
         if(!isValidEmail){
             throw new IllegalAccessException("Email is valid");
         }
-        String token =userService.signUpUser(new UserEntity(
-                registrationRequest.getEmail(),
-                registrationRequest.getPassword(),
-                registrationRequest.getFullName()
-        )) ;
+        UserEntity user = new UserEntity();
+        user.setUsername(registrationRequest.getEmail());
+        user.setPassword(registrationRequest.getPassword());
+        user.setFullname(registrationRequest.getFullName());
+        user.setDateOfBirth(registrationRequest.getDateOfBirth());
+        String token =userService.signUpUser(user) ;
 
             //String link="http://localhost:8080/api/registration/confirm?token="+token+"&userName="+registrationRequest.getEmail();
            // emailSenderService.send(registrationRequest.getEmail(),buildEmail(registrationRequest.getFullName(),link));

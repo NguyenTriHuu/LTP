@@ -21,5 +21,4 @@ public class AddressEntity {
     private String country;
     private String postalCode;
     private boolean status;
-
 }

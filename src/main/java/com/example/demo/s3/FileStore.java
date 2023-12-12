@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Date;
@@ -25,7 +26,7 @@ public class FileStore {
     }
 
 
-    public void save(String path,
+    /*public void save(String path,
                      String fileName,
                      Optional<Map<String,String>> optionalMetadata,
                      InputStream inputStream){
@@ -39,6 +40,23 @@ public class FileStore {
             amazonS3Client.putObject(path,fileName,inputStream,metadata);
         }catch (AmazonServiceException e){
             throw new IllegalStateException("Faile to store file to s3",e);
+        }
+    }*/
+    public void save(String path,
+                     String fileName,
+                     Optional<Map<String,String>> optionalMetadata,
+                     InputStream inputStream){
+        ObjectMetadata metadata = new ObjectMetadata();
+        optionalMetadata.ifPresent(map -> {
+            if (!map.isEmpty()) {
+                map.forEach(metadata::addUserMetadata);
+            }
+        });
+        try {
+            metadata.setContentLength(inputStream.available());
+            amazonS3Client.putObject(path, fileName, inputStream, metadata);
+        } catch (AmazonServiceException | IOException e) {
+            throw new IllegalStateException("Failed to store file to s3", e);
         }
     }
 

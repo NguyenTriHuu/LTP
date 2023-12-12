@@ -20,25 +20,15 @@ public class UserEntity extends BaseEntity {
     private String fullname;
     private LocalDateTime dateOfBirth;
     private Boolean locked;
-    private int age;
-    private Boolean isTeacher;
-    private Boolean isManager;
-    private Boolean isAdmin;
     private String avatar;
+    private LocalDateTime active;
     @ManyToMany(fetch = FetchType.EAGER)
     private Collection<RoleEntity> roles= new ArrayList<>();
 
     @OneToMany
     @JoinColumn(name = "user_id")
-    private Collection<UserClicksOnCourseEntity> numOfClick= new ArrayList<>();
-
-    @OneToMany
-    @JoinColumn(name = "user_id")
     private Collection<AddressEntity> address = new ArrayList<>();
 
-    @OneToMany
-    @JoinColumn(name = "user_id")
-    private Collection<ProfileStudentEntity> profileStudent = new ArrayList<>();
 
     @OneToMany
     @JoinColumn(name = "user_id")
@@ -56,8 +46,5 @@ public class UserEntity extends BaseEntity {
         this.password = password;
         this.fullname = fullname;
         this.locked = locked;
-        this.isTeacher = isTeacher;
-        this.isManager = isManager;
-        this.isAdmin = isAdmin;
     }
 }

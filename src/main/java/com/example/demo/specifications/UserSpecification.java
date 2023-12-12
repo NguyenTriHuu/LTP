@@ -1,7 +1,6 @@
 package com.example.demo.specifications;
 
 import com.example.demo.Entity.RoleEntity;
-import com.example.demo.Entity.UserClicksOnCourseEntity;
 import com.example.demo.Entity.UserEntity;
 import org.springframework.data.jpa.domain.Specification;
 

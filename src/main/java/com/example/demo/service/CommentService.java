@@ -14,7 +14,10 @@ public interface CommentService {
     RepliesResponse addReplyToComment(Long idComment, CommentRequest commentRequest);
 
     List<CommentResponse> getAllComments (Long idLesson);
+    List<CommentResponse> getAllCommentsBlog (Long idLesson);
 
     DeleteCommentResponse deleteComment (Long idComment);
     DeleteCommentResponse deleteCommentReply (Long idReply);
+
+    CommentResponse addCommentToBlog(Long blogId,CommentRequest commentRequest);
 }

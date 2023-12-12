@@ -38,8 +38,19 @@ public class ProgramEducationServiceImpl implements  ProgramEducationService{
     }
 
     @Override
-    public List<EducationProgramEntity> getAll() {
-        return programEducationRepo.findAll(Sort.by(Sort.Direction.DESC,"id"));
+    public List<ProgramRequest> getAll() {
+        List<EducationProgramEntity> listEntity =programEducationRepo.findAll(Sort.by(Sort.Direction.DESC,"id"));
+        List<ProgramRequest> listResponse = new ArrayList<>();
+        for(EducationProgramEntity programEntity: listEntity){
+            ProgramRequest programRequest = new ProgramRequest();
+            programRequest.setId(programEntity.getId());
+            programRequest.setName(programEntity.getName());
+            programRequest.setCode(programEntity.getCode());
+            Long  idCategory = categoryRepo.getCategoryByProgram(programEntity.getId());
+            programRequest.setIdCategory(idCategory);
+            listResponse.add(programRequest);
+        }
+        return listResponse;
     }
 
     @Override

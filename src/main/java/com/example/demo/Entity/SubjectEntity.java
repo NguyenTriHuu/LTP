@@ -21,12 +21,8 @@ public class SubjectEntity {
     private String code;
 
 
-    @OneToMany(mappedBy = "subject")
-    private Collection<BlogEntity> blogs =new ArrayList<>();
-
-    public SubjectEntity(String name, String code, Collection<CourseEntity> courses, Collection<BlogEntity> blogs) {
+    public SubjectEntity(String name, String code, Collection<CourseEntity> courses) {
         this.name = name;
         this.code = code;
-        this.blogs = blogs;
     }
 }

@@ -18,4 +18,5 @@ public class RepliesResponse {
     private Long idComment;
     private String type;
     private String userName;
+    private Long idUser;
 }

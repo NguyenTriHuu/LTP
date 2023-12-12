@@ -20,4 +20,8 @@ public interface CategoryRepo extends JpaRepository<CategoryEntity,Long> {
             "join course  on subject.id = course.subject_id \n" +
             "where categoty.id =:id",nativeQuery = true)
     int countCourseByCategory (@Param("id") Long id);
+
+
+    @Query(value = "select category_entity_id from categoty_programs where programs_id =:id",nativeQuery = true)
+    Long getCategoryByProgram(@Param("id") Long id);
 }

@@ -21,4 +21,5 @@ public class CommentResponse {
     private List<RepliesResponse> children;
     private String type;
     private String userName;
+    private Long idUser;
 }

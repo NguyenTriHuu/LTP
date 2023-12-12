@@ -9,7 +9,7 @@ public interface ProgramEducationService {
     void save (EducationProgramEntity educationProgram);
     void addSubjectToProgram(String program, String subject);
 
-    List<EducationProgramEntity> getAll();
+    List<ProgramRequest> getAll();
     List<EducationProgramEntity> getByCategory(Long idCategory);
 
     EducationProgramEntity save (ProgramRequest programRequest);

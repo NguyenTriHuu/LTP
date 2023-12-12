@@ -1,7 +1,9 @@
 package com.example.demo.service;
 import com.amazonaws.util.IOUtils;
 import com.example.demo.Entity.*;
+import com.example.demo.dto.GetUserReqRes;
 import com.example.demo.dto.ProfileTeacherUpdateRequest;
+import com.example.demo.dto.UserProfileResponse;
 import com.example.demo.repo.ProfileTeacherRepo;
 import com.example.demo.repo.RegistrationRepo;
 import com.example.demo.repo.RoleRepo;
@@ -106,7 +108,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public List<UserEntity> findAllTeacher() {
-        return userRepo.findAllByIsTeacher(true);
+        return userRepo.findAllByIsTeacher();
     }
 
     @Override
@@ -236,6 +238,99 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         userRepo.save(user);
     }
 
+    @Override
+    public List<GetUserReqRes> findUsersByFilter(GetUserReqRes getUserReqRes) {
+        return null;
+    }
+
+    @Override
+    public UserEntity changeRole(Long id, List<String> roles) {
+        UserEntity user = userRepo.findById(id).get();
+        userRepo.deleteRoleOfUser(user.getId());
+        Collection<RoleEntity> rolesEntity = new ArrayList<>();
+        for(String roleName: roles){
+            RoleEntity role = roleRepo.findByName(roleName);
+            rolesEntity.add(role);
+        }
+        user.setRoles(rolesEntity);
+        return userRepo.save(user);
+    }
+
+    @Override
+    public UserEntity changeStatus(Long id, Boolean status) {
+        UserEntity user = userRepo.findById(id).get();
+        user.setLocked(status);
+        return userRepo.save(user);
+    }
+
+    @Override
+    public void testDle(Long id) {
+        userRepo.deleteRoleOfUser(id);
+    }
+
+    @Override
+    public UserProfileResponse getUserProfile(String userName) {
+        UserEntity user = userRepo.findByUsername(userName).get();
+        UserProfileResponse userProfileResponse = new UserProfileResponse();
+        userProfileResponse.setUserName(user.getUsername());
+        userProfileResponse.setFullName(user.getFullname());
+        userProfileResponse.setAvatar(user.getAvatar());
+        return userProfileResponse;
+    }
+
+    @Override
+    public void updateFullName(String userName, String fullName) {
+        UserEntity userEntity = userRepo.findByUsername(userName).get();
+        userEntity.setFullname(fullName);
+        userRepo.save(userEntity);
+    }
+
+    @Override
+    public void updateUserName(String userName, String userNameUpdate) {
+        Boolean exist = userRepo.findByUsername(userName).isPresent();
+        if(exist){
+            UserEntity userEntity = userRepo.findByUsername(userName).get();
+            userEntity.setUsername(userNameUpdate);
+            userRepo.save(userEntity);
+        }
+    }
+
+    @Override
+    public void updatePassword(String userName, String password) {
+        UserEntity user = userRepo.findByUsername(userName).get();
+        user.setPassword(passwordEncoder.encode(password));
+        userRepo.save(user);
+
+    }
+
+    @Override
+    public byte[] updateAvatar(String userName, MultipartFile newAvatar) {
+        UserEntity userEntity = userRepo.findByUsername(userName).get();
+        String nameAvatar;
+        String pathAvatar;
+        if(newAvatar!=null){
+            Map<String, String> metadata= getStringStringMap(newAvatar);
+            pathAvatar = String.format("%s/%s", BucketName.COURSE_IMAGE.getBucketName(), userEntity.getUsername());
+            nameAvatar =String.format("%s-%s",newAvatar.getName()+"avatar",userEntity.getUsername());
+            try{
+                if(userEntity.getAvatar()!=null)
+                    fileStore.deleteFile( BucketName.COURSE_IMAGE.getBucketName(),userEntity.getAvatar());
+                    fileStore.save(pathAvatar,nameAvatar,Optional.of(metadata),newAvatar.getInputStream());
+                    userEntity.setAvatar(nameAvatar);
+            }catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        UserEntity userEntity1= userRepo.save(userEntity);
+        String path = String.format("%s/%s", BucketName.COURSE_IMAGE.getBucketName(),userEntity1.getUsername());
+        String key =userEntity1.getAvatar();
+        try {
+            return  IOUtils.toByteArray(fileStore.getObject(path,key).getObjectContent());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     @Override
     public String signUpUser(UserEntity user) throws IllegalAccessException {
@@ -262,10 +357,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     }
 
-    @Override
-    public void addClick(UserClicksOnCourseEntity userClicksOnCourseEntity, UserEntity user) {
-        user.getNumOfClick().add(userClicksOnCourseEntity);
-    }
+
 
 
     private static Map<String, String> getStringStringMap(MultipartFile file) {

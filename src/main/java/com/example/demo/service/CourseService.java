@@ -2,10 +2,7 @@ package com.example.demo.service;
 
 import com.amazonaws.services.s3.model.S3Object;
 import com.example.demo.Entity.CourseEntity;
-import com.example.demo.dto.CourseDetailRequest;
-import com.example.demo.dto.CourseSaveRequest;
-import com.example.demo.dto.CourseUpdateRequest;
-import com.example.demo.dto.ListCourseResponse;
+import com.example.demo.dto.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.data.domain.Page;
 
@@ -32,4 +29,17 @@ public interface CourseService {
     S3Object downloadVideo(Long id);
 
     String getVideoUrl(Long id);
+
+    CourseEntity lock(Long id, Boolean status);
+
+    Page<CourseResponse> getAllCourse (Map<String, Object> params);
+
+    Page<CourseResponse> search (Map<String, Object> params);
+    List<CourseResponse> getCourseRecommend(String userName);
+
+    List<CourseHistoryResponse> getHistory(Long idUser);
+
+    List<CourseResponse> getCourseEnrolled(String userName);
+
+
 }

@@ -21,7 +21,7 @@ public class ChatApi {
     public ResponseEntity<String> chat (@RequestBody String message,@PathVariable("idSession") Long idChatSession){
         RestTemplate restTemplate =new RestTemplate();
         String url = "https://api.openai.com/v1/chat/completions";
-        String apiKey ="Bearer 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";
+        String apiKey ="Bearer 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";
         HttpHeaders headers =new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));

@@ -27,6 +27,11 @@ public class CommentApi {
         return ResponseEntity.ok().body(commentService.getAllComments(id));
     }
 
+    @GetMapping("/blog/{idBlog}/comment")
+    public ResponseEntity<List<CommentResponse>> getAllCommentBlog (@PathVariable("idBlog") Long id){
+        return ResponseEntity.ok().body(commentService.getAllCommentsBlog(id));
+    }
+
  /*  @PostMapping("/course/test/comment/{id}")
     public List<CommentResponse> sendComment(@PathVariable("id") Long id, @RequestBody CommentRequest commentRequest) {
         return commentService.addCommentToLesson(id,commentRequest);

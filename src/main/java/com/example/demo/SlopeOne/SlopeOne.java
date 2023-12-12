@@ -21,36 +21,31 @@ public class SlopeOne {
 
     private final InputData inputData;
     private final CourseRepo courseRepo;
-    public  List<CourseEntity> slopeOne(UserEntity user) {
+
+    public List<CourseEntity> slopeOne(UserEntity user) {
         data = inputData.initializeData(user);
         System.out.println("Slope One - Before the Prediction\n");
-        buildDifferencesMatrix(data,user);
+        buildDifferencesMatrix(data, user);
         System.out.println("\nSlope One - With Predictions\n");
-        predict(data,user);
-        User user1 = new User("User "+user.getId());
+        predict(data, user);
+        User user1 = new User("User " + user.getId());
 
-        if(outputData.containsKey(user1)){
-            List<CourseEntity> listCourse =new ArrayList<>();
-            LinkedHashMap<Item, Double> listItem= HashMapSorting(outputData.get(user1));
+        if (outputData.containsKey(user1)) {
+            List<CourseEntity> listCourse = new ArrayList<>();
+            LinkedHashMap<Item, Double> listItem = HashMapSorting(outputData.get(user1));
             Set<Entry<Item, Double>> sortedEntries = listItem.entrySet();
-            int i=0;
+            int i = 0;
             for (Entry<Item, Double> mapping : sortedEntries) {
-                if(i==3) return listCourse;
-              listCourse.add(courseRepo.findById((long)Integer.parseInt(mapping.getKey().getItemName())).get());
-              i++;
+                if (i == 3) return listCourse;
+                listCourse.add(courseRepo.findById((long) Integer.parseInt(mapping.getKey().getItemName())).get());
+                i++;
             }
         }
         return null;
     }
 
-    /**
-     * Based on the available data, calculate the relationships between the
-     * items and number of occurences
-     *
-     * @param data
-     *            existing user data and their items' ratings
-     */
-    private static void buildDifferencesMatrix(Map<User, HashMap<Item, Double>> data,UserEntity userEntity) {
+
+    private static void buildDifferencesMatrix(Map<User, HashMap<Item, Double>> data, UserEntity userEntity) {
         for (HashMap<Item, Double> user : data.values()) {
             for (Map.Entry<Item, Double> e : user.entrySet()) {
                 if (!diff.containsKey(e.getKey())) {
@@ -79,17 +74,11 @@ public class SlopeOne {
                 diff.get(j).put(i, oldValue / count);
             }
         }
-        printData(data,userEntity);
+        printData(data, userEntity);
     }
 
-    /**
-     * Based on existing data predict all missing ratings. If prediction is not
-     * possible, the value will be equal to -1
-     *
-     * @param data
-     *            existing user data and their items' ratings
-     */
-    private static void predict(Map<User, HashMap<Item, Double>> data,UserEntity userEntity) {
+
+    private static void predict(Map<User, HashMap<Item, Double>> data, UserEntity userEntity) {
         HashMap<Item, Double> uPred = new HashMap<Item, Double>();
         HashMap<Item, Integer> uFreq = new HashMap<Item, Integer>();
         for (Item j : diff.keySet()) {
@@ -123,16 +112,16 @@ public class SlopeOne {
             }
             outputData.put(e.getKey(), clean);
         }
-        printData(outputData,userEntity);
+        printData(outputData, userEntity);
     }
 
-    private static void printData(Map<User, HashMap<Item, Double>> data,UserEntity userEntity) {
-        User user = new User("User "+userEntity.getId());
-        if(data.containsKey(user)){
+    private static void printData(Map<User, HashMap<Item, Double>> data, UserEntity userEntity) {
+        User user = new User("User " + userEntity.getId());
+        if (data.containsKey(user)) {
             System.out.println(user.getUsername() + ":");
             print(data.get(user));
-        }else{
-            System.out.println("Not Found : "+user.getUsername() + ":");
+        } else {
+            System.out.println("Not Found : " + user.getUsername() + ":");
         }
     }
 
@@ -143,7 +132,7 @@ public class SlopeOne {
         }
     }
 
-    private static LinkedHashMap<Item, Double> HashMapSorting(HashMap<Item,Double> map){
+    private static LinkedHashMap<Item, Double> HashMapSorting(HashMap<Item, Double> map) {
         Set<Entry<Item, Double>> entries = map.entrySet();
 
         System.out.println("----- Before sorting, random order -----");
@@ -155,21 +144,16 @@ public class SlopeOne {
         Comparator<Entry<Item, Double>> comparator = new Comparator<Entry<Item, Double>>() {
             @Override
             public int compare(Entry<Item, Double> e1, Entry<Item, Double> e2) {
-                double v1=e1.getValue().doubleValue();
-                double v2=e2.getValue().doubleValue();
+                double v1 = e1.getValue().doubleValue();
+                double v2 = e2.getValue().doubleValue();
                 if (v1 > v2) {
 
-                    // if current object is greater,then return 1
                     return -1;
-                }
-                else if (v1 < v2) {
+                } else if (v1 < v2) {
 
-                    // if current object is greater,then return -1
                     return 1;
-                }
-                else {
+                } else {
 
-                    // if current object is equal to o,then return 0
                     return 0;
                 }
             }

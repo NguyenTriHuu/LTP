@@ -50,24 +50,12 @@ public class CourseApi {
 
     @GetMapping("/courses/rated")
     @PreAuthorize("hasAuthority('STUDENT')")
-    public ResponseEntity<Collection<CourseEntity>> GetCourseRated(@RequestParam String userName) throws IllegalAccessException {
-        UserEntity userEntity = userService.getUser(userName);
-        List<CourseEntity> listCourse =new ArrayList<>();
-
-            listCourse =slopeOne.slopeOne(userEntity);
-
-        try{
-            for(CourseEntity course:listCourse){
-                System.out.println(course.getTitle());
-            }
-        }catch (NullPointerException e){
-            System.out.println("excep ra dc "+e);
-            return ResponseEntity.noContent().build();
-        }
-
-
-        return ResponseEntity.ok().body(listCourse);
+    public ResponseEntity<List<CourseResponse>> GetCourseRated(@RequestParam String userName) throws IllegalAccessException {
+        return ResponseEntity.ok().body(courseService.getCourseRecommend(userName));
     }
+
+
+
     @GetMapping("/courses/all")
     //@PreAuthorize("hasAuthority('student:write')")
     public ResponseEntity<List<CourseEntity>> GetCourse() throws IllegalAccessException {
@@ -81,6 +69,20 @@ public class CourseApi {
     public ResponseEntity<ListCourseResponse> GetCourseByFilter(@RequestParam(required = false) Map<String, Object> params) throws IllegalAccessException {
         ListCourseResponse listCourseResponse =courseService.findAllByFilter(params);
         return ResponseEntity.ok().body(listCourseResponse);
+    }
+
+    @GetMapping("/courses/list")
+    //@PreAuthorize("hasAuthority('student:write')")
+    public ResponseEntity<Page<CourseResponse>> getAllCourse(@RequestParam(required = false) Map<String, Object> params) throws IllegalAccessException {
+
+        return ResponseEntity.ok().body(courseService.getAllCourse(params));
+    }
+
+    @GetMapping("/courses/search")
+    //@PreAuthorize("hasAuthority('student:write')")
+    public ResponseEntity<Page<CourseResponse>> search(@RequestParam(required = false) Map<String, Object> params) throws IllegalAccessException {
+
+        return ResponseEntity.ok().body(courseService.search(params));
     }
 
     @PostMapping(value = "/course/save",
@@ -165,4 +167,22 @@ public class CourseApi {
     public ResponseEntity<LectureEntity> getProcess(@PathVariable("id") Long id){
         return ResponseEntity.ok().body(lectureService.getLecture(id));
     }
+
+    @PostMapping(value = "/course/{id}/lock")
+    public ResponseEntity<CourseEntity> ClockOrUnClockCourse(@PathVariable("id") Long id, @RequestBody Boolean status){
+            return ResponseEntity.ok().body(courseService.lock(id,status));
+    }
+
+    @GetMapping(value = "/course/history/{userName}")
+    public ResponseEntity<List<CourseHistoryResponse>> getHistory(@PathVariable("userName") String userName){
+        UserEntity user = userService.getUser(userName);
+        return ResponseEntity.ok().body(courseService.getHistory(user.getId()));
+    }
+
+    @GetMapping(value = "/course/get/registration/{userName}")
+    public ResponseEntity<List<CourseResponse>> getCourseEnrolled(@PathVariable("userName")String userName){
+         return ResponseEntity.ok().body(courseService.getCourseEnrolled(userName)) ;
+    }
+
+
 }

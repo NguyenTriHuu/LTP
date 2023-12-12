@@ -1,17 +1,11 @@
 package com.example.demo.service;
 
-import com.example.demo.Entity.CommentEntity;
-import com.example.demo.Entity.LectureEntity;
-import com.example.demo.Entity.RepliesEntity;
-import com.example.demo.Entity.UserEntity;
+import com.example.demo.Entity.*;
 import com.example.demo.dto.CommentRequest;
 import com.example.demo.dto.CommentResponse;
 import com.example.demo.dto.DeleteCommentResponse;
 import com.example.demo.dto.RepliesResponse;
-import com.example.demo.repo.CommentRepo;
-import com.example.demo.repo.LectureRepo;
-import com.example.demo.repo.RepliesRepo;
-import com.example.demo.repo.UserRepo;
+import com.example.demo.repo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +25,7 @@ public class CommentServiceImpl implements  CommentService{
     private final LectureRepo lectureRepo;
     private final UserService userService;
     private final RepliesRepo repliesRepo;
+    private final BlogRepo blogRepo;
     @Override
     public CommentResponse addCommentToLesson(Long idLesson, CommentRequest commentRequest) {
         CommentEntity comment = new CommentEntity();
@@ -77,6 +72,7 @@ public class CommentServiceImpl implements  CommentService{
         response.setCreatedTime(repliesEntity1.getCreatedtime());
         response.setType("REPLY");
         response.setUserName(commentRequest.getUserName());
+        response.setIdUser(repliesEntity1.getUser().getId());
         return response;
     }
 
@@ -120,6 +116,40 @@ public class CommentServiceImpl implements  CommentService{
     }
 
     @Override
+    public List<CommentResponse> getAllCommentsBlog(Long idBlog) {
+        List<CommentResponse> list =new ArrayList<>();
+        for(CommentEntity commentEntity: commentRepo.getAllByBlog(idBlog)){
+            CommentResponse commentResponse =new CommentResponse();
+            commentResponse.setIdComment(commentEntity.getId());
+            commentResponse.setCreatedTime(commentEntity.getCreatedtime());
+            commentResponse.setFullNameUser(commentEntity.getUser().getFullname());
+            commentResponse.setContent(commentEntity.getContent());
+            commentResponse.setType("COMMENT");
+            commentResponse.setUserName(commentEntity.getUser().getUsername());
+            commentResponse.setIdUser(commentEntity.getUser().getId());
+            List<RepliesEntity> repliesEntityList =repliesRepo.findByComment_Id(commentEntity.getId());
+            if(repliesEntityList!= null){
+                List <RepliesResponse> listReplies =new ArrayList<>();
+                for(RepliesEntity repliesEntity: repliesEntityList){
+                    RepliesResponse response =new RepliesResponse();
+                    response.setContent(repliesEntity.getContent());
+                    response.setIdComment(commentEntity.getId());
+                    response.setReplyId(repliesEntity.getId());
+                    response.setFullNameUser(repliesEntity.getUser().getFullname());
+                    response.setCreatedTime(repliesEntity.getCreatedtime());
+                    response.setType("REPLY");
+                    response.setUserName(repliesEntity.getUser().getUsername());
+                    response.setIdUser(repliesEntity.getUser().getId());
+                    listReplies.add(response);
+                }
+                commentResponse.setChildren(listReplies);
+            }
+            list.add(commentResponse);
+        }
+        return list;
+    }
+
+    @Override
     public DeleteCommentResponse deleteComment(Long idComment) {
         repliesRepo.deleteByComment(idComment);
         commentRepo.deleteByComment(idComment);
@@ -134,6 +164,31 @@ public class CommentServiceImpl implements  CommentService{
         DeleteCommentResponse response = new DeleteCommentResponse();
         response.setReplyId(idReply);
         return response;
+    }
+
+    @Override
+    public CommentResponse addCommentToBlog(Long blogId, CommentRequest commentRequest) {
+        CommentEntity comment = new CommentEntity();
+        UserEntity user = userRepo.findByUsername(commentRequest.getUserName()).get();
+        comment.setUser(user);
+        comment.setContent(commentRequest.getContent());
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        comment.setCreatedtime(Date.from(currentDateTime.atZone(ZoneId.systemDefault()).toInstant()));
+        BlogEntity blogEntity = blogRepo.findById(blogId).get();
+        comment.setBlog(blogEntity);
+        CommentEntity commentEntity= commentRepo.save(comment);
+
+        //Set response
+        CommentResponse commentResponse =new CommentResponse();
+        commentResponse.setIdComment(commentEntity.getId());
+        commentResponse.setCreatedTime(commentEntity.getCreatedtime());
+        commentResponse.setFullNameUser(commentEntity.getUser().getFullname());
+        commentResponse.setContent(commentEntity.getContent());
+        commentResponse.setType("COMMENT");
+        commentResponse.setUserName(commentRequest.getUserName());
+        commentResponse.setChildren(new ArrayList<RepliesResponse>());
+        commentResponse.setIdUser(commentEntity.getUser().getId());
+        return commentResponse;
     }
 
 }

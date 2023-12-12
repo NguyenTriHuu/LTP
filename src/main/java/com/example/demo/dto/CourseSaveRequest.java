@@ -11,14 +11,12 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class CourseSaveRequest {
-
     private String title;
     private MultipartFile file;
     private String description;
     private Integer price;
-    private Long teacherId;
+    private String userName;
     private String subject;
-    private Integer duration;
     private LocalDateTime dateTime;
     private String shortDescription;
     private MultipartFile thumdnail;

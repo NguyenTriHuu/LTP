@@ -16,9 +16,7 @@ public class CourseUpdateRequest {
     private MultipartFile file;
     private String description;
     private Integer price;
-    private Long teacherId;
     private String subject;
-    private Integer duration;
     private LocalDateTime dateTime;
     private String thematics;
     private Boolean status;

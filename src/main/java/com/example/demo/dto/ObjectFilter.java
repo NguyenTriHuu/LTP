@@ -8,6 +8,7 @@ public class ObjectFilter {
     private String subject;
     private String category;
     private String program;
+    private String approved;
     private int offSet;
     private String stringQuery;
     private int rowsPerPage;

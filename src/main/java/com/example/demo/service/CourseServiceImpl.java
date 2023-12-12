@@ -3,10 +3,8 @@ package com.example.demo.service;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.util.IOUtils;
-import com.example.demo.Entity.CourseEntity;
-import com.example.demo.Entity.LectureEntity;
-import com.example.demo.Entity.RegistrationsEntity;
-import com.example.demo.Entity.ThematicEntity;
+import com.example.demo.Entity.*;
+import com.example.demo.SlopeOne.SlopeOne;
 import com.example.demo.dto.*;
 import com.example.demo.repo.*;
 import com.example.demo.s3.BucketName;
@@ -39,6 +37,7 @@ public class CourseServiceImpl implements CourseService{
     private final LectureRepo lectureRepo;
     private final RoleRepo roleRepo;
     private final RegistrationRepo registrationRepo;
+    private final SlopeOne slopeOne;
 
     @Override
     public CourseEntity findCourseById(Long id) {
@@ -66,10 +65,11 @@ public class CourseServiceImpl implements CourseService{
         courseEntity.setPrice(course.getPrice());
         courseEntity.setTitle(course.getTitle());
         courseEntity.setSubject(subjectRepo.findByCode(course.getSubject()).get());
-        courseEntity.setDuration(course.getDuration());
         courseEntity.setDescription(course.getDescription());
         courseEntity.setDateStart(course.getDateTime());
+        courseEntity.setApproved("PENDDING");
         courseEntity.setLinkVideoIntro(fileName);
+        courseEntity.setRegisterDate(LocalDateTime.now());
         try{
 
             fileStore.save(pathFile,fileName,Optional.of(metadataFile),course.getFile().getInputStream());
@@ -79,7 +79,8 @@ public class CourseServiceImpl implements CourseService{
         }
         RegistrationsEntity registrationsEntity = new RegistrationsEntity();
         registrationsEntity.setCourse(courseRepo.save(courseEntity));
-        registrationsEntity.setUser(userRepo.findById(course.getTeacherId()).get());
+        UserEntity user = userRepo.findByUsername(course.getUserName()).get();
+        registrationsEntity.setUser(user);
         registrationsEntity.setRegistrationDate(LocalDateTime.now());
         registrationsEntity.setRole(roleRepo.findByName("TEACHER"));
         registrationRepo.save(registrationsEntity);
@@ -95,12 +96,14 @@ public class CourseServiceImpl implements CourseService{
 
     @Override
     public void saveCourseDetail(Long id,CourseDetailRequest courseDetailRequest) {
-        CourseEntity courseEntity = courseRepo.findById(id).get();
-        List<ThematicEntity> thematics = getThematicEntities(courseDetailRequest.getThematics());
-        Iterable<ThematicEntity> itrThem=thematics;
-        thematicRepo.saveAll(itrThem);
-        courseEntity.setThematics(thematics);
-        courseRepo.save(courseEntity);
+        if(courseDetailRequest.getThematics()!=null){
+            CourseEntity courseEntity = courseRepo.findById(id).get();
+            List<ThematicEntity> thematics = getThematicEntities(courseDetailRequest.getThematics());
+            Iterable<ThematicEntity> itrThem=thematics;
+            thematicRepo.saveAll(itrThem);
+            courseEntity.setThematics(thematics);
+            courseRepo.save(courseEntity);
+        }
     }
 
     private List<ThematicEntity> getThematicEntities(List<ThematicRequest> thematicRequests) {
@@ -109,16 +112,19 @@ public class CourseServiceImpl implements CourseService{
             ThematicEntity thematicEntity = new ThematicEntity();
             thematicEntity.setName(thematic.getName());
             List<LectureEntity> lectures = new ArrayList<>();
-            for(LectureRequest lecture:thematic.getLectures()){
-                LectureEntity lectureEntity= new LectureEntity();
-                lectureEntity.setTitle(lecture.getTitle());
-                lectureEntity.setLocked(true);
-                lectures.add(lectureEntity);
+            if(thematic.getLectures()!=null){
+                for(LectureRequest lecture:thematic.getLectures()){
+                    LectureEntity lectureEntity= new LectureEntity();
+                    lectureEntity.setTitle(lecture.getTitle());
+                    lectureEntity.setLocked(true);
+                    lectures.add(lectureEntity);
+                }
+                thematicEntity.setLectures(lectures);
+                Iterable<LectureEntity> itrLect= lectures;
+                lectureRepo.saveAll(itrLect);
             }
-            thematicEntity.setLectures(lectures);
+
             thematics.add(thematicEntity);
-            Iterable<LectureEntity> itrLect= lectures;
-            lectureRepo.saveAll(itrLect);
         }
         return thematics;
     }
@@ -127,8 +133,9 @@ public class CourseServiceImpl implements CourseService{
     public ListCourseResponse findAllByFilter(Map<String, Object> params) {
         ListCourseResponse listCourseResponse =new ListCourseResponse();
         ObjectFilter objectFilter =new ObjectFilter();
-        if(params.containsKey("status")) objectFilter.setStatus(Boolean.valueOf((String)params.get("status")));
-        else objectFilter.setStatus(false);
+        if(params.containsKey("status") && !params.get("status").equals(""))
+            objectFilter.setStatus(Boolean.valueOf((String)params.get("status")));
+
         if(params.containsKey("stringQuery")) objectFilter.setStringQuery((String)params.get("stringQuery"));
         else objectFilter.setStringQuery("");
         if(params.containsKey("sort")) objectFilter.setSort((String)params.get("sort"));
@@ -139,14 +146,31 @@ public class CourseServiceImpl implements CourseService{
         else objectFilter.setProgram("");
         if(params.containsKey("category")) objectFilter.setCategory((String)params.get("category"));
         else objectFilter.setCategory("");
-        int totalItem =courseRepo.findAllByFilter("%"+
-                        objectFilter.getCategory()+"%",
-                "%"+objectFilter.getProgram()+"%",
-                "%"+objectFilter.getSubject()+"%",
-                "%"+objectFilter.getStringQuery()+"%",
-                objectFilter.getStatus(),
-                0,
-                100).size();
+        if(params.containsKey("approved")) objectFilter.setApproved((String)params.get("approved"));
+        else objectFilter.setApproved("");
+
+        int totalItem=0;
+        if(objectFilter.getStatus()!=null){
+            totalItem =courseRepo.findAllByFilter("%"+
+                            objectFilter.getCategory()+"%",
+                    "%"+objectFilter.getProgram()+"%",
+                    "%"+objectFilter.getSubject()+"%",
+                    "%"+objectFilter.getStringQuery()+"%",
+                    objectFilter.getApproved()+"%",
+                    objectFilter.getStatus(),
+                    0,
+                    100).size();
+        }else {
+            totalItem =courseRepo.findAllByFilterWithoutStatus("%"+
+                            objectFilter.getCategory()+"%",
+                    "%"+objectFilter.getProgram()+"%",
+                    "%"+objectFilter.getSubject()+"%",
+                    "%"+objectFilter.getStringQuery()+"%",
+                    objectFilter.getApproved()+"%",
+                    0,
+                    100).size();
+        }
+
         if(params.containsKey("page")){
             if((Integer.parseInt((String)params.get("page")))*(Integer.parseInt((String)params.get("rowsPerPage")))<=totalItem)
                 listCourseResponse.setNextPage(Integer.parseInt((String)params.get("page"))+1);
@@ -162,15 +186,31 @@ public class CourseServiceImpl implements CourseService{
             objectFilter.setOffSet(0);
             objectFilter.setRowsPerPage(50);
         }
-        listCourseResponse.setListCourse(courseRepo.findAllByFilter("%"+
-                        objectFilter.getCategory()+"%",
-                "%"+objectFilter.getProgram()+"%",
-                "%"+objectFilter.getSubject()+"%",
-                "%"+objectFilter.getStringQuery()+"%",
-                objectFilter.getStatus(),
-                objectFilter.getOffSet(),
-                objectFilter.getRowsPerPage()
-        ));
+        List<CourseEntity> courseEntityList= new ArrayList<>();
+        if(objectFilter.getStatus()!=null){
+          courseEntityList=  courseRepo.findAllByFilter("%"+
+                            objectFilter.getCategory()+"%",
+                    "%"+objectFilter.getProgram()+"%",
+                    "%"+objectFilter.getSubject()+"%",
+                    "%"+objectFilter.getStringQuery()+"%",
+                    objectFilter.getApproved()+"%",
+                    objectFilter.getStatus(),
+                    objectFilter.getOffSet(),
+                    objectFilter.getRowsPerPage()
+            );
+        }else{
+            courseEntityList=  courseRepo.findAllByFilterWithoutStatus("%"+
+                            objectFilter.getCategory()+"%",
+                    "%"+objectFilter.getProgram()+"%",
+                    "%"+objectFilter.getSubject()+"%",
+                    "%"+objectFilter.getStringQuery()+"%",
+                    objectFilter.getApproved()+"%",
+                    objectFilter.getOffSet(),
+                    objectFilter.getRowsPerPage()
+            );
+        }
+        listCourseResponse.setListCourse(courseEntityList);
+
         return listCourseResponse;
 
     }
@@ -230,17 +270,8 @@ public class CourseServiceImpl implements CourseService{
                 throw new RuntimeException(e);
             }
         }
-
-        if(courseUpdateRequest.getTeacherId()!=null){
-            RegistrationsEntity registrationsEntity =registrationRepo.findByCourseAndRole(oldCourse.getId(),roleRepo.findByName("TEACHER").getId()).get();
-            registrationsEntity.setUser(userRepo.findById(courseUpdateRequest.getTeacherId()).get());
-            registrationRepo.save(registrationsEntity);
-        }
         if(courseUpdateRequest.getSubject()!=null){
             newCourse.setSubject(subjectRepo.findByCode(courseUpdateRequest.getSubject()).get());
-        }
-        if(courseUpdateRequest.getDuration()!=null){
-            newCourse.setDuration(courseUpdateRequest.getDuration());
         }
         if(courseUpdateRequest.getStatus()!=null){
             newCourse.setStatus(courseUpdateRequest.getStatus());
@@ -293,6 +324,98 @@ public class CourseServiceImpl implements CourseService{
         return fileStore.getVideoUrl(fileName,path);
     }
 
+    @Override
+    public CourseEntity lock(Long id, Boolean status) {
+        CourseEntity course = courseRepo.findById(id).get();
+        course.setStatus(status);
+        return courseRepo.save(course);
+    }
+
+    @Override
+    public Page<CourseResponse> getAllCourse(Map<String, Object> params) {
+        int page =0;
+        int size =10;
+        if(params.containsKey("page") && params.get("page")!= null && !params.get("page").toString().isEmpty()) page = Integer.parseInt(params.get("page").toString());
+        if(params.containsKey("rowsPerPage") && params.get("page")!=null && !params.get("rowsPerPage").toString().isEmpty()) size = Integer.parseInt(params.get("rowsPerPage").toString());
+        Page<CourseResponse> courseResponses = courseRepo.getAllCourses(PageRequest.of(page,size));
+        List<CourseResponse> list = courseResponses.getContent();
+
+       for(CourseResponse course: list){
+           String path = String.format("%s/%s", BucketName.COURSE_IMAGE.getBucketName(), course.getUserName());
+           String key =course.getAvatarTeacher();
+           if(key==null){
+               continue;
+           }
+           try {
+                course.setAvatar(IOUtils.toByteArray(fileStore.getObject(path,key).getObjectContent()));
+           } catch (IOException e) {
+               throw new RuntimeException(e);
+           }
+       }
+        return courseResponses;
+    }
+
+    @Override
+    public Page<CourseResponse> search(Map<String, Object> params) {
+        int page =0;
+        int size =10;
+        String search="";
+        if(params.containsKey("page") && params.get("page")!= null && !params.get("page").toString().isEmpty()) page = Integer.parseInt(params.get("page").toString());
+        if(params.containsKey("rowsPerPage") && params.get("page")!=null && !params.get("rowsPerPage").toString().isEmpty()) size = Integer.parseInt(params.get("rowsPerPage").toString());
+        if(params.containsKey("search") && params.get("search")!= null ) search =String.valueOf(params.get("search"));
+        Page<CourseResponse> courseResponses = courseRepo.search(PageRequest.of(page,size),"%"+search+"%");
+        return courseResponses;
+    }
+
+    @Override
+    public List<CourseResponse> getCourseRecommend(String userName) {
+        List<CourseResponse> responses = new ArrayList<>();
+        UserEntity user = userRepo.findByUsername(userName).get();
+        List<CourseEntity> listCourseEntity =slopeOne.slopeOne(user);
+        for(CourseEntity courseEntity: listCourseEntity){
+            CourseResponse courseResponse = new CourseResponse();
+            courseResponse.setId(courseEntity.getId());
+            courseResponse.setApproved(courseEntity.getApproved());
+            courseResponse.setImage(courseEntity.getImage());
+            courseResponse.setPrice(courseEntity.getPrice());
+            courseResponse.setTitle(courseEntity.getTitle());
+            courseResponse.setStatus(courseEntity.isStatus());
+            courseResponse.setShortDescription(courseEntity.getShortDescription());
+            UserEntity teacher = userRepo.findTeacherOfCourse(courseEntity.getId());
+            courseResponse.setUserName(teacher.getUsername());
+            courseResponse.setFullNameTeacher(teacher.getFullname());
+            String path = String.format("%s/%s", BucketName.COURSE_IMAGE.getBucketName(), teacher.getUsername());
+            String key =teacher.getAvatar();
+            if(key!=null){
+                try {
+                    courseResponse.setAvatar(IOUtils.toByteArray(fileStore.getObject(path,key).getObjectContent()));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            responses.add(courseResponse);
+
+        }
+        return responses;
+    }
+
+    @Override
+    public List<CourseHistoryResponse> getHistory(Long idUser) {
+        return courseRepo.getHistory(idUser);
+    }
+
+    @Override
+    public List<CourseResponse> getCourseEnrolled(String userName) {
+        UserEntity user = userRepo.findByUsername(userName).get();
+        List<CourseResponse> list = courseRepo.getCourseEnrolled(user.getId());
+        for(CourseResponse courseResponse: list){
+            UserEntity teacher = userRepo.findTeacherOfCourse(courseResponse.getId());
+            courseResponse.setIdTeacher(teacher.getId());
+            courseResponse.setFullNameTeacher(teacher.getFullname());
+        }
+        return list;
+    }
+
     private static void extracted(CourseEntity oldCourse, CourseEntity newCourse) {
         newCourse.setId(oldCourse.getId());
         newCourse.setImage(oldCourse.getImage());
@@ -302,6 +425,11 @@ public class CourseServiceImpl implements CourseService{
         newCourse.setDescription(oldCourse.getDescription());
         newCourse.setDateStart(oldCourse.getDateStart());
         newCourse.setThematics(oldCourse.getThematics());
+        newCourse.setApproved(oldCourse.getApproved());
+        newCourse.setApprovedDate(oldCourse.getApprovedDate());
+        newCourse.setStatus(oldCourse.isStatus());
+        newCourse.setShortDescription(oldCourse.getShortDescription());
+        newCourse.setRegisterDate(oldCourse.getRegisterDate());
     }
 
     @Override

@@ -17,7 +17,7 @@ public class ProgramApi {
     private final ProgramEducationService programEducationService;
 
     @GetMapping(value = "/program/all")
-    public ResponseEntity<List<EducationProgramEntity>> getAll(){
+    public ResponseEntity<List<ProgramRequest>> getAll(){
         return ResponseEntity.ok().body(programEducationService.getAll());
     }
 

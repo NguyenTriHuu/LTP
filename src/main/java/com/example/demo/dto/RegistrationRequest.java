@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 @EqualsAndHashCode
@@ -13,4 +15,5 @@ public class RegistrationRequest {
     private String email;
     private String fullName;
     private String password;
+    private LocalDateTime dateOfBirth;
 }

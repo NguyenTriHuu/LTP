@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -19,14 +20,17 @@ public class BlogEntity extends BaseEntity{
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @ManyToOne
-    @JoinColumn(name = "subject_id")
-    private SubjectEntity subject;
-
-    @OneToMany(mappedBy = "blog")
-    private Collection<CommentEntity> comments =new ArrayList<>();
+    private String linkThumnail;
+    private Boolean status;
+    @Column(columnDefinition = "TEXT")
+    private String shortDescription;
+    private LocalDateTime dateCreate;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
     private CategoryEntity category;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
 }

@@ -16,4 +16,10 @@ public interface CommentRepo extends JpaRepository<CommentEntity , Long> {
     @Modifying
     @Query(value = "DELETE FROM comment WHERE id =:idComment", nativeQuery = true)
     void deleteByComment(@Param("idComment") Long idComment);
+
+    @Query(value = "select count(*) from comment where blog_id =?1",nativeQuery = true)
+    Integer countComment(Long idBlog);
+
+    @Query(value = "select * from comment where blog_id =:idBlog ORDER BY createdtime DESC",nativeQuery = true)
+    List<CommentEntity> getAllByBlog(@Param("idBlog") Long idBlog);
 }
